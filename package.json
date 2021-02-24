@@ -21,6 +21,7 @@
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
+  "homepage": "https://github.com/OrangeLab/tenon-loader/blob/main/README.md",
   "gitHooks": {
     "pre-commit": "lint-staged"
   },
