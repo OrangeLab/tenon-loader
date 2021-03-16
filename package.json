@@ -13,6 +13,7 @@
     "build": "tsc",
     "pretest": "tsc",
     "test": "jest",
+    "publish": "node ./scripts/publish.js",
     "dev-example": "webpack-dev-server --config example/webpack.config.js --inline --hot",
     "build-example": "rm -rf example/dist && webpack --config example/webpack.config.js --env.prod",
     "lint": "prettier --write --parser typescript \"{src,test}/**/*.ts\""
@@ -60,6 +61,8 @@
     "cache-loader": "^4.1.0",
     "css-loader": "^3.3.2",
     "file-loader": "^5.0.2",
+    "fs-extra": "^9.1.0",
+    "inquirer": "^8.0.0",
     "jest": "^25.5.4",
     "lint-staged": "^9.5.0",
     "memfs": "^3.1.2",
