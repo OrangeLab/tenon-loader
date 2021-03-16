@@ -1,4 +1,5 @@
 import postcss, { Root, Rule } from 'postcss'
+import { styleTransformer } from '@hummer/tenon-utils'
 
 enum MatchType {
   Class,
@@ -127,6 +128,9 @@ function getRuleStyle(node: Rule): Record<string, string> {
     let { prop, value } = item
     style[prop] = value
   })
+  style = styleTransformer.transformStyle(style)
+  // console.log('Style===>Transform')
+  // console.log(style)
   return style
 }
 
