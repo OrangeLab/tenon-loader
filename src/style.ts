@@ -129,8 +129,6 @@ function getRuleStyle(node: Rule): Record<string, string> {
     style[prop] = value
   })
   style = styleTransformer.transformStyle(style)
-  // console.log('Style===>Transform')
-  // console.log(style)
   return style
 }
 
