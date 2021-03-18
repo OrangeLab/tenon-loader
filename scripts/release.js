@@ -170,8 +170,7 @@ function updateVersion(version) {
  */
 async function publishPackage(version, runIfNotDry) {
   const publicArgs = [
-    'publish',
-    '--no-git-tag-version'
+    'publish'
   ]
   if (args.tag) {
     publicArgs.push(`--tag`, args.tag)
