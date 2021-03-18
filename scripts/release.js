@@ -181,7 +181,7 @@ async function publishPackage(version, runIfNotDry) {
     publicArgs.push(`--tag`, args.tag)
   }
   try {
-    await runIfNotDry('yarn', publicArgs, {
+    await runIfNotDry('npm', publicArgs, {
       stdio: 'pipe'
     })
     console.log(chalk.green(`Successfully published ${pkgName}@${version}`))
