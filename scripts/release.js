@@ -129,7 +129,7 @@ async function main() {
   }
 
   step('\nGenerating changelog...')
-  await run('yarn', ['changelog'])
+  // await run('yarn', ['changelog'])
 
   const { stdout } = await run('git', ['diff'], { stdio: 'pipe' })
   if (stdout) {
