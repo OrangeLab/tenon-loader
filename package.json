@@ -1,6 +1,6 @@
 {
   "name": "@hummer/tenon-loader",
-  "version": "1.0.3",
+  "version": "1.0.4-0",
   "license": "ISC",
   "author": "duanlikang",
   "main": "dist/index.js",

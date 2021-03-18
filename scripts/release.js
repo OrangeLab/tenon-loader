@@ -135,7 +135,7 @@ async function main() {
   if (stdout) {
     step('\nCommitting changes...')
     await runIfNotDry('git', ['add', '-A'])
-    await runIfNotDry('git', ['commit', '-m', `release: ${tag}`])
+    await runIfNotDry('git', ['commit', '-m', `release: ${tag}`, '--no-verify'])
   } else {
     console.log('No changes to commit.')
   }
