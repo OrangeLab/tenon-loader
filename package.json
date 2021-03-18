@@ -1,6 +1,6 @@
 {
   "name": "@hummer/tenon-loader",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "license": "ISC",
   "author": "duanlikang",
   "main": "dist/index.js",
@@ -13,7 +13,7 @@
     "build": "tsc",
     "pretest": "tsc",
     "test": "jest",
-    "publish": "node ./scripts/publish.js",
+    "publish": "node ./scripts/release.js",
     "dev-example": "webpack-dev-server --config example/webpack.config.js --inline --hot",
     "build-example": "rm -rf example/dist && webpack --config example/webpack.config.js --env.prod",
     "lint": "prettier --write --parser typescript \"{src,test}/**/*.ts\""
@@ -42,6 +42,7 @@
     "@types/mini-css-extract-plugin": "^0.9.1",
     "@vue/compiler-sfc": "^3.0.1",
     "chalk": "^3.0.0",
+    "enquirer": "^2.3.6",
     "hash-sum": "^2.0.0",
     "loader-utils": "^1.2.3",
     "merge-source-map": "^1.1.0",
