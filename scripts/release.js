@@ -146,7 +146,6 @@ async function main() {
   step('\nPushing to GitHub...')
   await runIfNotDry('git', ['tag', tag])
   await runIfNotDry('git', ['push', 'origin', `refs/tags/${tag}`])
-  await runIfNotDry('git', ['push'])
 
   if (isDryRun) {
     console.log(`\nDry run finished - run git diff to see package changes.`)
@@ -169,16 +168,12 @@ function updateVersion(version) {
  * @param {Function} runIfNotDry
  */
 async function publishPackage(version, runIfNotDry) {
-  const publicArgs = [
-    'publish'
-  ]
+  const publicArgs = ['publish', '--access', 'public']
   if (args.tag) {
     publicArgs.push(`--tag`, args.tag)
   }
   try {
-    await runIfNotDry('npm', publicArgs, {
-      stdio: 'pipe'
-    })
+    await runIfNotDry('npm', publicArgs)
     console.log(chalk.green(`Successfully published ${pkgName}@${version}`))
   } catch (e) {
     if (e.stderr.match(/previously published/)) {
