@@ -177,9 +177,8 @@ export default function loader(
     .join('\n')
 
   // attach scope Id for runtime use
-  if (hasScoped) {
-    code += `\nscript.__scopeId = "data-v-${id}"`
-  }
+  // for tenon use, every script should have scopedId
+  code += `\nscript.__scopeId = "data-v-${id}"`
 
   if (needsHotReload) {
     code += genHotReloadCode(id, templateRequest)
