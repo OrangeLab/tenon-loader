@@ -19,6 +19,8 @@ const isESLintLoader = (l: Loader) => /(\/|\\|@)eslint-loader/.test(l.path)
 const isNullLoader = (l: Loader) => /(\/|\\|@)null-loader/.test(l.path)
 const isCacheLoader = (l: Loader) => /(\/|\\|@)cache-loader/.test(l.path)
 const isNotPitcher = (l: Loader) => l.path !== __filename
+const isTenonStyleLoader = (l: Loader) =>
+  /(\/|\\|@)tenonStyleLoader/.test(l.path)
 
 const pitcher: webpack.loader.Loader = code => code
 
@@ -59,6 +61,14 @@ export const pitch = function() {
       return true
     }
   })
+
+  if (query.type === `style`) {
+    const cssLoaderIndex = loaders.findIndex(isTenonStyleLoader)
+    if (cssLoaderIndex > -1) {
+      loaders.splice(cssLoaderIndex, 1)
+    }
+    return genProxyModule([tenonStyleLoaderPath, ...loaders], context)
+  }
   if (query.type === `style`) {
     // Tenon. 所有style增加Style loader的逻辑处理，无需考虑css-loader是否加载
     return genProxyModule([tenonStyleLoaderPath, ...loaders], context)
