@@ -3,9 +3,6 @@ import qs from 'querystring'
 import loaderUtils from 'loader-utils'
 
 const selfPath = require.resolve('./index')
-// FIXME: Sourcemap 定位对应和生成 去除 StylePostLoader
-// const stylePostLoaderPath = require.resolve('./stylePostLoader')
-const tenonStyleLoaderPath = require.resolve('./tenonStyleLoader')
 
 // @types/webpack doesn't provide the typing for loaderContext.loaders...
 interface Loader {
@@ -19,9 +16,6 @@ const isESLintLoader = (l: Loader) => /(\/|\\|@)eslint-loader/.test(l.path)
 const isNullLoader = (l: Loader) => /(\/|\\|@)null-loader/.test(l.path)
 const isCacheLoader = (l: Loader) => /(\/|\\|@)cache-loader/.test(l.path)
 const isNotPitcher = (l: Loader) => l.path !== __filename
-const isTenonStyleLoader = (l: Loader) =>
-  /(\/|\\|@)tenonStyleLoader/.test(l.path)
-
 const pitcher: webpack.loader.Loader = code => code
 
 // This pitching loader is responsible for intercepting all vue block requests
@@ -61,18 +55,6 @@ export const pitch = function() {
       return true
     }
   })
-
-  if (query.type === `style`) {
-    const cssLoaderIndex = loaders.findIndex(isTenonStyleLoader)
-    if (cssLoaderIndex > -1) {
-      loaders.splice(cssLoaderIndex, 1)
-    }
-    return genProxyModule([tenonStyleLoaderPath, ...loaders], context)
-  }
-  if (query.type === `style`) {
-    // Tenon. 所有style增加Style loader的逻辑处理，无需考虑css-loader是否加载
-    return genProxyModule([tenonStyleLoaderPath, ...loaders], context)
-  }
 
   // if a custom block has no other matching loader other than vue-loader itself
   // or cache-loader, we should ignore it
