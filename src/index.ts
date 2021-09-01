@@ -64,6 +64,7 @@ export default function loader(
     resourceQuery
   } = loaderContext
   const rawQuery = resourceQuery.slice(1)
+  const inheritQuery = `&${rawQuery}`
   const incomingQuery = qs.parse(rawQuery)
   const options = (loaderUtils.getOptions(loaderContext) ||
     {}) as VueLoaderOptions
@@ -119,7 +120,7 @@ export default function loader(
     const idQuery = `&id=${id}`
     const scopedQuery = hasScoped ? `&scoped=true` : ``
     const attrsQuery = attrsToQuery(descriptor.template.attrs)
-    const query = `?vue&type=template${idQuery}${scopedQuery}${attrsQuery}${resourceQuery}`
+    const query = `?vue&type=template${idQuery}${scopedQuery}${attrsQuery}${inheritQuery}`
     templateRequest = stringifyRequest(src + query)
     templateImport = `import { render } from ${templateRequest}`
   }
@@ -129,7 +130,7 @@ export default function loader(
   if (descriptor.script) {
     const src = descriptor.script.src || resourcePath
     const attrsQuery = attrsToQuery(descriptor.script.attrs, 'js')
-    const query = `?vue&type=script${attrsQuery}${resourceQuery}`
+    const query = `?vue&type=script${attrsQuery}${inheritQuery}`
     const scriptRequest = stringifyRequest(src + query)
     scriptImport =
       `import script from ${scriptRequest}\n` + `export * from ${scriptRequest}` // support named exports
@@ -146,7 +147,7 @@ export default function loader(
       // duplicate tags when multiple components import the same css file
       // 处理样式隔离,因此每个文件都默认传递scopeId
       const idQuery = style.scoped ? `&id=${id}` : ``
-      const query = `?vue&type=style&index=${i}${idQuery}${attrsQuery}${resourceQuery}`
+      const query = `?vue&type=style&index=${i}${idQuery}${attrsQuery}${inheritQuery}`
       const styleRequest = stringifyRequest(src + query)
       if (style.module) {
         if (!hasCSSModules) {
