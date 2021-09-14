@@ -37,9 +37,9 @@
     ]
   },
   "dependencies": {
-    "@hummer/tenon-compiler": "^1.0.0",
+    "@hummer/tenon-compiler": "^1.3.0",
     "@hummer/tenon-utils": "^1.2.1",
-    "@vue/compiler-sfc": "^3.0.1",
+    "@vue/compiler-sfc": "3.2.11",
     "chalk": "^3.0.0",
     "enquirer": "^2.3.6",
     "hash-sum": "^2.0.0",
