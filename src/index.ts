@@ -9,7 +9,8 @@ import {
   CompilerOptions,
   SFCBlock,
   SFCTemplateCompileOptions,
-  SFCStyleBlock
+  SFCStyleBlock,
+  SFCScriptBlock
 } from '@vue/compiler-sfc'
 import { selectBlock } from './select'
 import { genHotReloadCode } from './hotReload'
@@ -127,13 +128,18 @@ export default function loader(
 
   // script
   let scriptImport = `const script = {}`
-  if (descriptor.script) {
-    const src = descriptor.script.src || resourcePath
-    const attrsQuery = attrsToQuery(descriptor.script.attrs, 'js')
+  const { script, scriptSetup } = descriptor
+  if (script || scriptSetup) {
+    // const lang = script?.lang || scriptSetup?.lang
+  //   isTS = !!(lang && /tsx?/.test(lang))
+    const src = (script && !scriptSetup && script.src) || resourcePath
+    const attrsQuery = attrsToQuery((scriptSetup as SFCScriptBlock || script as SFCScriptBlock).attrs, 'js')
     const query = `?vue&type=script${attrsQuery}${inheritQuery}`
     const scriptRequest = stringifyRequest(src + query)
     scriptImport =
-      `import script from ${scriptRequest}\n` + `export * from ${scriptRequest}` // support named exports
+      `import script from ${scriptRequest}\n` +
+      // support named exports
+      `export * from ${scriptRequest}`
   }
 
   // styles

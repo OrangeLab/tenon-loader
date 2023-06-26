@@ -22,13 +22,18 @@ export function selectBlock(
 
   // script
   if (query.type === `script`) {
-    const script = descriptor.script!
-    if (appendExtension) {
-      loaderContext.resourcePath += '.' + (script.lang || 'js')
+    // 暂只处理来自mpx的setup
+    if (descriptor.scriptSetup && !loaderContext.resourcePath.includes('.mpx')) {
+      loaderContext.emitError(`<script setup> is not support`)
     }
-    loaderContext.callback(null, script.content, script.map)
-    return
-  }
+
+    const script = descriptor.script || descriptor.scriptSetup;
+    if (appendExtension) {
+      loaderContext.resourcePath += '.' + (script?.lang || 'js');
+    }
+    loaderContext.callback(null, script?.content, script?.map);
+    return;
+}
 
   // styles
   if (query.type === `style` && query.index != null) {
