@@ -1,10 +1,14 @@
-import webpack from 'webpack'
-import { SFCDescriptor } from '@vue/compiler-sfc'
-import { ParsedUrlQuery } from 'querystring'
+import type { LoaderContext } from 'webpack'
+import type { SFCDescriptor } from 'vue/compiler-sfc'
+import type { ParsedUrlQuery } from 'querystring'
+import { resolveScript } from './resolveScript'
+import type { VueLoaderOptions } from 'src'
 
 export function selectBlock(
   descriptor: SFCDescriptor,
-  loaderContext: webpack.loader.LoaderContext,
+  scopeId: string,
+  options: VueLoaderOptions,
+  loaderContext: LoaderContext<VueLoaderOptions>,
   query: ParsedUrlQuery,
   appendExtension: boolean
 ) {
@@ -16,24 +20,25 @@ export function selectBlock(
     if (appendExtension) {
       loaderContext.resourcePath += '.' + (template.lang || 'html')
     }
-    loaderContext.callback(null, template.content, template.map)
+    loaderContext.callback(null, template.content, template.map as any)
     return
   }
 
   // script
   if (query.type === `script`) {
+    // TODO: 验证是否需要单独对MPX进行处理
     // 暂只处理来自mpx的setup
-    if (descriptor.scriptSetup && !loaderContext.resourcePath.includes('.mpx')) {
-      loaderContext.emitError(`<script setup> is not support`)
-    }
+    // if (descriptor.scriptSetup && !loaderContext.resourcePath.includes('.mpx')) {
+    //   loaderContext.emitError(`<script setup> is not support`)
+    // }
 
-    const script = descriptor.script || descriptor.scriptSetup;
+    const script = resolveScript(descriptor, scopeId, options, loaderContext)!
     if (appendExtension) {
-      loaderContext.resourcePath += '.' + (script?.lang || 'js');
+      loaderContext.resourcePath += '.' + (script?.lang || 'js')
     }
-    loaderContext.callback(null, script?.content, script?.map);
-    return;
-}
+    loaderContext.callback(null, script?.content, script?.map as any)
+    return
+  }
 
   // styles
   if (query.type === `style` && query.index != null) {
@@ -41,13 +46,13 @@ export function selectBlock(
     if (appendExtension) {
       loaderContext.resourcePath += '.' + (style.lang || 'css')
     }
-    loaderContext.callback(null, style.content, style.map)
+    loaderContext.callback(null, style.content, style.map as any)
     return
   }
 
   // custom
   if (query.type === 'custom' && query.index != null) {
     const block = descriptor.customBlocks[Number(query.index)]
-    loaderContext.callback(null, block.content, block.map)
+    loaderContext.callback(null, block.content, block.map as any)
   }
 }

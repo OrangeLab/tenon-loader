@@ -3,6 +3,8 @@
 )
 
 > PS. Fork From Vue Loader
+## update
+基于 vue loader tag: v17.3.1 修改
 
 Tenon Vue 专用 Loader, 增加了样式处理相关逻辑，切换 Compiler 的包为 Tenon Compiler
 > 备注：由于 Tenon 中样式逻辑需要特殊处理，底层 css 的样式解析下沉到 Tenon Loader 中，针对 less 或者 scss 样式处理等，不需要引入 css-loader 和 style-loader，建议直接使用 [hummer cli](https://hummer.didi.cn/doc-tenon#/zh-CN/cli_doc) 进行开发。

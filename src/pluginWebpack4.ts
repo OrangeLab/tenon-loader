@@ -1,44 +1,52 @@
-import qs from 'querystring'
-import webpack from 'webpack'
-import { VueLoaderOptions } from './'
+import * as qs from 'querystring'
+import type { Compiler, RuleSetRule } from 'webpack'
+import type { VueLoaderOptions } from './'
+import { clientCache, typeDepToSFCMap } from './resolveScript'
+import fs = require('fs')
+import { compiler as vueCompiler } from './compiler'
+import { descriptorCache } from './descriptorCache'
+import { needHMR } from './util'
 
 const RuleSet = require('webpack/lib/RuleSet')
 
 const id = 'vue-loader-plugin'
 const NS = 'vue-loader'
+
 interface PluginOptions {
   type: string // Vue || Cml
 }
-class VueLoaderPlugin implements webpack.Plugin {
+
+// these types are no longer available in webpack 5
+type RuleSetQuery = string | { [k: string]: any }
+interface RuleSetLoader {
+  loader?: string | undefined
+  options?: RuleSetQuery | undefined
+  ident?: string | undefined
+  query?: RuleSetQuery | undefined
+}
+
+class VueLoaderPlugin {
   static NS = NS
   private options: PluginOptions
   constructor(options?: PluginOptions) {
     this.options = Object.assign(
       {
-        type: 'vue'
+        type: 'vue',
       },
       options
     )
   }
-  apply(compiler: webpack.Compiler) {
+  apply(compiler: Compiler) {
     let { type } = this.options
     // inject NS for plugin installation check in the main loader
-    if (compiler.hooks) {
-      compiler.hooks.compilation.tap(id, compilation => {
-        compilation.hooks.normalModuleLoader.tap(id, loaderContext => {
-          loaderContext[NS] = true
-        })
+    compiler.hooks.compilation.tap(id, (compilation) => {
+      compilation.hooks.normalModuleLoader.tap(id, (loaderContext: any) => {
+        loaderContext[NS] = true
       })
-    } else {
-      compiler.plugin('compilation', compilation => {
-        compilation.plugin('normal-module-loader', (loaderContext: any) => {
-          loaderContext[NS] = true
-        })
-      })
-    }
+    })
     const rawRules = compiler.options.module!.rules
     // use webpack's RuleSet utility to normalize user rules
-    const rules = new RuleSet(rawRules).rules as webpack.RuleSetRule[]
+    const rules = new RuleSet(rawRules).rules as RuleSetRule[]
 
     // find the rule that applies to vue files & chameleon files
     let vueRuleIndex = rawRules.findIndex(createMatcher(`foo.${type}`))
@@ -61,9 +69,9 @@ class VueLoaderPlugin implements webpack.Plugin {
     }
 
     // get the normlized "use" for vue files
-    const vueUse = vueRule.use as webpack.RuleSetLoader[]
+    const vueUse = vueRule.use as RuleSetLoader[]
     // get vue-loader options
-    const vueLoaderUseIndex = vueUse.findIndex(u => {
+    const vueLoaderUseIndex = vueUse.findIndex((u) => {
       return /tenon-loader|(\/|\\|@)tenon-loader/.test(u.loader || '')
     })
 
@@ -80,7 +88,7 @@ class VueLoaderPlugin implements webpack.Plugin {
 
     // for each user rule (expect the vue rule), create a cloned rule
     // that targets the corresponding language blocks in *.vue files.
-    const clonedRules = rules.filter(r => r !== vueRule).map(cloneRule)
+    const clonedRules = rules.filter((r) => r !== vueRule).map(cloneRule)
 
     // rule for template compiler
     const templateCompilerRule = {
@@ -89,7 +97,10 @@ class VueLoaderPlugin implements webpack.Plugin {
         const parsed = qs.parse(query.slice(1))
         return parsed.vue != null && parsed.type === 'template'
       },
-      options: vueLoaderOptions
+      options: {
+        ident: vueLoaderUse.ident,
+        ...vueLoaderOptions,
+      },
     }
 
     // for each rule that matches plain .js files, also create a clone and
@@ -97,8 +108,9 @@ class VueLoaderPlugin implements webpack.Plugin {
     // compiled vue render functions receive the same treatment as user code
     // (mostly babel)
     const matchesJS = createMatcher(`test.js`)
+    const matchesTS = createMatcher(`test.ts`)
     const jsRulesForRenderFn = rules
-      .filter(r => r !== vueRule && matchesJS(r))
+      .filter((r) => r !== vueRule && (matchesJS(r) || matchesTS(r)))
       .map(cloneRuleForRenderFn)
 
     // pitcher for block requests (for injecting stylePostLoader and deduping
@@ -108,7 +120,7 @@ class VueLoaderPlugin implements webpack.Plugin {
       resourceQuery: (query: string) => {
         const parsed = qs.parse(query.slice(1))
         return parsed.vue != null
-      }
+      },
     }
 
     // replace original rules
@@ -117,13 +129,77 @@ class VueLoaderPlugin implements webpack.Plugin {
       ...jsRulesForRenderFn,
       templateCompilerRule,
       ...clonedRules,
-      ...rules
+      ...rules,
     ]
+
+    // 3.3 HMR support for imported types
+    if (
+      needHMR(vueLoaderOptions, compiler.options) &&
+      vueCompiler.invalidateTypeCache
+    ) {
+      let watcher: any
+
+      const WatchPack = require('watchpack')
+
+      compiler.hooks.afterCompile.tap(id, (compilation) => {
+        if (compilation.compiler === compiler) {
+          // type-only imports can be tree-shaken and not registered as a
+          // watched file at all, so we have to manually ensure they are watched.
+          const files = [...typeDepToSFCMap.keys()]
+          const oldWatcher = watcher
+          watcher = new WatchPack({ aggregateTimeout: 0 })
+
+          watcher.once(
+            'aggregated',
+            (changes: Set<string>, removals: Set<string>) => {
+              for (const file of changes) {
+                // bust compiler-sfc type dep cache
+                vueCompiler.invalidateTypeCache(file)
+                const affectedSFCs = typeDepToSFCMap.get(file)
+                if (affectedSFCs) {
+                  for (const sfc of affectedSFCs) {
+                    // bust script resolve cache
+                    const desc = descriptorCache.get(sfc)
+                    if (desc) clientCache.delete(desc)
+                    // force update importing SFC
+                    fs.writeFileSync(sfc, fs.readFileSync(sfc, 'utf-8'))
+                  }
+                }
+              }
+              for (const file of removals) {
+                vueCompiler.invalidateTypeCache(file)
+              }
+            }
+          )
+
+          watcher.watch({ files, startTime: Date.now() })
+
+          if (oldWatcher) {
+            oldWatcher.close()
+          }
+        }
+      })
+
+      compiler.hooks.watchClose.tap(id, () => {
+        if (watcher) {
+          watcher.close()
+        }
+      })
+
+      // In some cases, e.g. in this project's tests,
+      // even though needsHMR() returns true, webpack is not watching, thus no watchClose hook is called.
+      // So we need to close the watcher when webpack is done.
+      compiler.hooks.done.tap(id, () => {
+        if (watcher) {
+          watcher.close()
+        }
+      })
+    }
   }
 }
 
 function createMatcher(fakeFile: string) {
-  return (rule: webpack.RuleSetRule) => {
+  return (rule: RuleSetRule) => {
     // #1201 we need to skip the `include` check when locating the vue rule
     const clone = Object.assign({}, rule)
     delete clone.include
@@ -132,7 +208,7 @@ function createMatcher(fakeFile: string) {
   }
 }
 
-function cloneRule(rule: webpack.RuleSetRule) {
+function cloneRule(rule: RuleSetRule) {
   const resource = rule.resource as Function
   const resourceQuery = rule.resourceQuery as Function
   // Assuming `test` and `resourceQuery` tests are executed in series and
@@ -163,7 +239,7 @@ function cloneRule(rule: webpack.RuleSetRule) {
         return false
       }
       return true
-    }
+    },
   }
 
   if (rule.rules) {
@@ -177,7 +253,7 @@ function cloneRule(rule: webpack.RuleSetRule) {
   return res
 }
 
-function cloneRuleForRenderFn(rule: webpack.RuleSetRule) {
+function cloneRuleForRenderFn(rule: RuleSetRule) {
   const resource = rule.resource as Function
   const resourceQuery = rule.resourceQuery as Function
   let currentResource: string
@@ -192,7 +268,7 @@ function cloneRuleForRenderFn(rule: webpack.RuleSetRule) {
       if (parsed.vue == null || parsed.type !== 'template') {
         return false
       }
-      const fakeResourcePath = `${currentResource}.js`
+      const fakeResourcePath = `${currentResource}.${parsed.ts ? `ts` : `js`}`
       if (resource && !resource(fakeResourcePath)) {
         return false
       }
@@ -200,7 +276,7 @@ function cloneRuleForRenderFn(rule: webpack.RuleSetRule) {
         return false
       }
       return true
-    }
+    },
   }
 
   if (rule.rules) {
