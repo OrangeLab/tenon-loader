@@ -4,7 +4,7 @@ import { styleTransformer } from '@hummer/tenon-utils'
 enum MatchType {
   Class,
   ID,
-  Attr
+  Attr,
 }
 interface RuleNode {
   selector: string
@@ -50,7 +50,7 @@ function handleSelector(
   node: Rule,
   options: CompileStyleOptions
 ) {
-  let selectorList = selector.split(/\s/).filter(item => !!item)
+  let selectorList = selector.split(/\s/).filter((item) => !!item)
   let lastSelector = selectorList.pop() as string
   let style = getRuleStyle(node)
   let { scoped, id = '' } = options
@@ -63,7 +63,7 @@ function handleSelector(
       selector: className,
       matchType: MatchType.Class,
       relation: '',
-      style: style
+      style: style,
     }
     // 处理样式隔离问题
     if (scoped) {
@@ -72,7 +72,7 @@ function handleSelector(
           tagList: [],
           classList: [],
           idList: [],
-          attrList: []
+          attrList: [],
         }
       }
       ruleSetMap[id].classList.push(classRule)
@@ -132,7 +132,7 @@ function getRuleStyle(node: Rule): Record<string, string> {
   return style
 }
 
-export const compileStyle = function(
+export const compileStyle = function (
   source: string,
   options: CompileStyleOptions = { scoped: false }
 ) {
@@ -141,11 +141,11 @@ export const compileStyle = function(
       tagList: [],
       classList: [],
       idList: [],
-      attrList: []
-    }
+      attrList: [],
+    },
   }
   postcss([getCollectPlugin(ruleSetMap, options)]).process(source, {
-    from: undefined
+    from: undefined,
   }).css
   let code = generateCode(ruleSetMap, options)
   return code
