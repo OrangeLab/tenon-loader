@@ -53,9 +53,9 @@ const TemplateLoader: LoaderDefinitionFunction = function (source, inMap: any) {
     slotted: descriptor.slotted,
     compiler: TenonCompiler as any,
     compilerOptions: {
+      runtimeModuleName: '@hummer/tenon-vue',
       ...options.compilerOptions,
       scopeId: `data-v-${scopeId}`,
-      runtimeModuleName: '@hummer/tenon-vue',
       bindingMetadata: script ? script.bindings : undefined,
       ...resolveTemplateTSOptions(descriptor, options),
     },
