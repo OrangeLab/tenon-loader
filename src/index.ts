@@ -116,6 +116,7 @@ export default function loader(
   const { descriptor, errors } = parse(source, {
     filename: resourcePath,
     sourceMap,
+    templateParseOptions: options.compilerOptions,
   })
 
   const asCustomElement =

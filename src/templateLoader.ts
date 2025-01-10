@@ -29,7 +29,10 @@ const TemplateLoader: LoaderDefinitionFunction = function (source, inMap: any) {
   // 为了每个组件都在render时执行setScopedId方法,所以都默认传一个scopeId
   const scopeId = query.id as string
   // const scopeId = query.scoped ? `data-v-${query.id}` : null
-  const descriptor = getDescriptor(loaderContext.resourcePath)
+  const descriptor = getDescriptor(
+    loaderContext.resourcePath,
+    options.compilerOptions
+  )
   const script = resolveScript(
     descriptor,
     query.id as string,
@@ -46,6 +49,10 @@ const TemplateLoader: LoaderDefinitionFunction = function (source, inMap: any) {
 
   const compiled = compileTemplate({
     source,
+    ast:
+      descriptor.template && !descriptor.template.lang
+        ? descriptor.template.ast
+        : undefined,
     filename: loaderContext.resourcePath,
     inMap,
     id: scopeId,
